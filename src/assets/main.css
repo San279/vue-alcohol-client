@@ -6,6 +6,7 @@
   padding: 0;
   font-weight: normal;
   background-color: rgb(203, 216, 219);
+  font-family:Arial, Helvetica, sans-serif;
 }
 .modal-wrapper {
   display: flex;
@@ -17,6 +18,11 @@
   background-color: #12181270;
 }
 
+.page-content{
+  width: 100vw;
+  height: 100vh;
+  padding: 2.5vw 4vw 2vw 5vw;
+}
 .modal-bg-clr{
   background-color: #c3cac7;
 }
@@ -40,6 +46,8 @@ a,
 .search-con {
   display: flex;
   width: 50vw;
+  align-items: center;
+
 }
 
 .search-input {
@@ -76,18 +84,41 @@ a,
   cursor: pointer;
 }
 
+
+.new-data-btn {
+  border: none;
+  width: 10vw;
+  height: 3vw;
+  margin: 1vw 1vw 1vw 1vw;
+  cursor: pointer;
+  color: white;
+  background-color: #42b883;
+  font-size: 1vw;
+  border-radius: 10px;
+}
+
+.new-data-btn:hover {
+  background-color: #337ece;
+  box-shadow: rgba(50, 50, 93, 0.25) 0px 30px 60px -12px inset, rgba(0, 0, 0, 0.3) 0px 18px 36px -18px inset;
+}
+
 .create-btn {
   width: 7vw;
   height: 2vw;
   align-self: center;
   /*top: -0.6vw;
   left: 19.7vw;*/
+  top: 55%;
   cursor: pointer;
   background-color: rgb(11, 167, 107);
   border-radius: 5px;
   font-size: 0.9vw;
   color: white;
   border: none;
+}
+
+.create-btn:hover{
+  box-shadow: rgba(50, 50, 93, 0.25) 0px 30px 60px -12px inset, rgba(0, 0, 0, 0.3) 0px 18px 36px -18px inset;
 }
 
 .edit-ele-btn{
@@ -124,19 +155,25 @@ table {
   /* Or a specific width */
   border-collapse: collapse;
   /* Collapse borders for a cleaner look */
-  margin-bottom: 20px;
+  margin-bottom: 1vw;
   /* Add some spacing below the table */
 }
 
+h1 {
+  padding: 0.5vw 0vw 0.5vw 1vw;
+  font-weight: bolder;
+  font-style:normal;
+}
 h2 {
   font-weight: bold;
   font-size: 1.1vw;
 }
 th,
 td {
-  padding: 8px;
+  padding: 0.7vw;
+  font-size: 0.84vw;
   text-align: center;
-  border: 1px solid #f5f0f0;
+  border: 1px solid #c49d9d00;
 }
 
 th {

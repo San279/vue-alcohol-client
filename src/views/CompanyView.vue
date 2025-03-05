@@ -1,4 +1,5 @@
 <script setup>
+const user = JSON.parse(localStorage.getItem("cur_user"));
 </script>
 
 <template>
@@ -15,42 +16,44 @@
         </div>
     </div>
     <div v-if="showEditModal" class="modal-wrapper" @click="closeEditModal()">
-        <EditComModal :uuid = "uuidProps" :showEditModal ="showEditModal" @close = "closeEditModal()"/>
+        <EditComModal :uuid="uuidProps" :showEditModal="showEditModal" @close="closeEditModal()" />
     </div>
-    <div class="company-view">
+    <div class="page-content">
         <h1>Companies</h1>
         <div class="search-con" style="width: 20vw;">
             <multiselect class="search-input" id="companyTag" v-model="searchCompany"
-                tag-placeholder="Add this as new tag" placeholder="Filter Companies" label="companyName"
-                track-by="companyUUID" :options="companyIndex" :multiple="true" :taggable="true" @tag="addCompany">
+                tag-placeholder="Add this as new tag" placeholder="Filter Companies" label="companyname"
+                track-by="companyuuid" :options="companyIndex" :multiple="true" :taggable="true" @tag="addCompany">
             </multiselect>
         </div>
         <div class=log-table>
-            <div class="btn-container">
-                <button class="new-company-btn" @click="openCompanyModal">+ New Company</button>
-                <button v-if = "selectCompany.length > 0" class="delete-company-btn" @click="deleteCompany">Delete</button>
+            <div class="btn-container" v-if = "user.priv != null">
+                <button class="new-data-btn" @click="openCompanyModal">+ New Company</button>
+                <button v-if="selectCompany.length > 0" class="delete-company-btn"
+                    @click="deleteCompany">Delete</button>
             </div>
             <table>
                 <thead>
                     <tr>
                         <th>Name</th>
                         <th>Added On</th>
-                        <th>Actions</th>
-                        <th></th>
+                        <th v-if = "user.priv != null">Actions</th>
+                        <th v-if = "user.priv != null"></th>
                     </tr>
                 </thead>
                 <tbody id="table_log">
-                    <tr v-for="item in tableData" :key="item.companyUUID">
+                    <tr v-for="item in filteredCompanies" :key="item.companyuuid">
                         <td class="table-ele">{{ item.companyname }}</td>
                         <td class="table-ele">{{ item.date }}</td>
-                        <td class="table-action">
+                        <td class="table-action" v-if = "user.priv != null">
                             <svg xmlns="http://www.w3.org/2000/svg" class="edit-row-btn"
                                 @click="openEditModal(item.companyuuid)" viewBox="0 0 512 512">
                                 <path
                                     d="M471.6 21.7c-21.9-21.9-57.3-21.9-79.2 0L362.3 51.7l97.9 97.9 30.1-30.1c21.9-21.9 21.9-57.3 0-79.2L471.6 21.7zm-299.2 220c-6.1 6.1-10.8 13.6-13.5 21.9l-29.6 88.8c-2.9 8.6-.6 18.1 5.8 24.6s15.9 8.7 24.6 5.8l88.8-29.6c8.2-2.7 15.7-7.4 21.9-13.5L437.7 172.3 339.7 74.3 172.4 241.7zM96 64C43 64 0 107 0 160L0 416c0 53 43 96 96 96l256 0c53 0 96-43 96-96l0-96c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 96c0 17.7-14.3 32-32 32L96 448c-17.7 0-32-14.3-32-32l0-256c0-17.7 14.3-32 32-32l96 0c17.7 0 32-14.3 32-32s-14.3-32-32-32L96 64z" />
                             </svg>
                         </td>
-                        <td class ="table-ele"> <input type="checkbox" :value=item.companyuuid v-model="selectCompany"></td>
+                        <td class="table-ele" v-if = "user.priv != null"> <input type="checkbox" :value=item.companyuuid v-model="selectCompany">
+                        </td>
                     </tr>
                 </tbody>
             </table>
@@ -58,7 +61,6 @@
             <br />
             <br />
         </div>
-        {{ searchCompany }}
     </div>
 </template>
 
@@ -71,7 +73,7 @@ import api from '@/assets/api';
 import EditComModal from '@/components/EditComModal.vue';
 const apiReq = new api();
 export default {
-    components: { Multiselect, EditComModal},
+    components: { Multiselect, EditComModal },
     data() {
         return {
             newCompany: ref(""),
@@ -79,16 +81,7 @@ export default {
             showEditModal: false,
             selectCompany: ref([]),
             searchCompany: ref([]),
-            companyIndex: ref([
-                {
-                    "companyUUID": "43210",
-                    "companyName": "yamaha"
-                },
-                {
-                    "companyUUID": "43211",
-                    "companyName": "honda"
-                }
-            ]),
+            companyIndex: ref([]),
             tableData: ([]),
         }
     },
@@ -113,20 +106,14 @@ export default {
         },
         getCompanyData() {
             apiReq.get("company/getAll").then(data => {
-                for (let i = 0; i < data.length; i++){
+                for (let i = 0; i < data.length; i++) {
                     let splitDateTime = data[i].createon.split("T");
                     console.log(data[i])
                     const resObj = data[i];
                     resObj.date = splitDateTime[0]
                     this.tableData.push(resObj)
+                    this.companyIndex.push(resObj)
                 }
-                /*
-                for (let i = 0; i < this.tableData.length; i++) {
-                    let splitDateTime = this.tableData[i].checkdate.split(" ");
-                    this.tableData[i].date = splitDateTime[0];
-                    this.tableData[i].time = splitDateTime[1];
-                }
-                    */
                 console.log(this.tableData)
             }).catch(err => {
                 console.log(err);
@@ -160,7 +147,20 @@ export default {
                 console.log(err);
                 alert('failed to delete company');
             })
-        }
+        },
+    },
+    computed: {
+        filteredCompanies() {
+            if (!this.searchCompany || this.searchCompany.length === 0) {
+                return this.tableData; // Return all companies if no filter is applied
+            }
+
+            return this.tableData.filter((company) => {
+                return this.searchCompany.some(
+                    (selectedCompany) => selectedCompany.companyuuid === company.companyuuid
+                );
+            });
+        },
     },
     watch: {
         searchCompany: {
@@ -181,28 +181,11 @@ export default {
 </script>
 <style src="vue-multiselect/dist/vue-multiselect.min.css"></style>
 <style scoped>
-.company-view {
-    width: 100vw;
-    height: 100%;
-    padding-right: 8vw;
-    padding-top: 2vw;
-}
 
-.btn-container{
+.btn-container {
     display: flex;
     justify-content: space-between;
     align-items: center;
-}
-.new-company-btn {
-    border: none;
-    width: 10vw;
-    height: 3vw;
-    margin: 1vw 1vw 1vw 1vw;
-    cursor: pointer;
-    color: white;
-    background-color: #42b883;
-    font-size: 1vw;
-    border-radius: 10px;
 }
 
 .delete-company-btn {
@@ -235,20 +218,6 @@ export default {
     border-radius: 10px;
     z-index: 1000;
     background-color: #c3cac7;
-}
-
-.create-btn {
-    width: 7vw;
-    height: 2vw;
-    align-self: center;
-    /*top: -0.6vw;
-    left: 19.7vw;*/
-    cursor: pointer;
-    background-color: rgb(11, 167, 107);
-    border-radius: 5px;
-    font-size: 0.9vw;
-    color: white;
-    border: none;
 }
 
 .close-btn {

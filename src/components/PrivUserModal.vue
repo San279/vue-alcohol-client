@@ -371,15 +371,18 @@ export default {
 }
 
 .exist-data {
-    font-size: 0.9vw;
+    font-size: 0.95vw;
+    color: white;
+    font-weight: bold;
 }
 
 .priv-exist-table {
     display: flex;
     justify-content: space-between;
     margin-bottom: 0.5vw;
-    background-color: rgb(177, 160, 160);
-    padding: 0.8vw;
+    background-color: #35495e;
+    padding: 0.6vw;
+    border-radius: 5px;
 }
 
 .priv-add-table {
@@ -446,8 +449,8 @@ export default {
 .close-btn {
     width: 2vw;
     position: absolute;
-    top: -2%;
-    left: 90.6%;
+    top: -1%;
+    left: 92%;
     z-index: 1000;
     cursor: pointer;
 }

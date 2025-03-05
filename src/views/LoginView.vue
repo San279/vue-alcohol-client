@@ -29,8 +29,8 @@ export default {
     loginAcc() {
       apiReq.post("user/login", this.user)
     .then(data => {
-      alert("login succesfully")
       localStorage.setItem("token", "bearer " + data.accessToken);
+      localStorage.setItem("cur_user", JSON.stringify(data.user));
       window.location.href = "http://localhost:5173/"
     })
     .catch(error => {
