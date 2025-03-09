@@ -450,7 +450,7 @@ export default {
     width: 2vw;
     position: absolute;
     top: -1%;
-    left: 92%;
+    left: 94.2%;
     z-index: 1000;
     cursor: pointer;
 }

@@ -40,7 +40,7 @@
             <h3 class = "nav-name">Equipments</h3>
         </RouterLink>
         <div class="empty-space"></div>
-        <div class="navbar-element" @click = "usrLogout()">
+        <div class="navbar-element rotate90" style = "align-self: center;"@click = "usrLogout()">
             <svg xmlns="http://www.w3.org/2000/svg" height="30" width="30" viewBox="0 0 512 512">
                 <path fill="#ffffff"
                     d="M377.9 105.9L500.7 228.7c7.2 7.2 11.3 17.1 11.3 27.3s-4.1 20.1-11.3 27.3L377.9 406.1c-6.4 6.4-15 9.9-24 9.9c-18.7 0-33.9-15.2-33.9-33.9l0-62.1-128 0c-17.7 0-32-14.3-32-32l0-64c0-17.7 14.3-32 32-32l128 0 0-62.1c0-18.7 15.2-33.9 33.9-33.9c9 0 17.6 3.6 24 9.9zM160 96L96 96c-17.7 0-32 14.3-32 32l0 256c0 17.7 14.3 32 32 32l64 0c17.7 0 32 14.3 32 32s-14.3 32-32 32l-64 0c-53 0-96-43-96-96L0 128C0 75 43 32 96 32l64 0c17.7 0 32 14.3 32 32s-14.3 32-32 32z" />
@@ -85,7 +85,7 @@ export default {
     width: 5.5vw;
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: left;
     height: 100vh;
     background-color: #42b883e3;
     transition: width 0.3s ease; /* Add transition */
@@ -94,8 +94,8 @@ export default {
 }
 
 .nav:hover {
-    width: 11vw;
-    background-color: #42b883af;
+    width: 11.5vw;
+    background-color: #42b883d2;
 }
 
 .navbar-element {
@@ -111,9 +111,11 @@ export default {
     color: white;
     font-weight: bold;
 }
-.navbar-element:hover .nav-name {
+
+.nav:hover .nav-name {
     display: flex;
 }
+
 a.custom-active-class {
     text-decoration: solid underline 4px;
     text-underline-offset: 13px;
@@ -132,5 +134,13 @@ a.custom-active-class {
 
 .Navbar-hidden {
     transform: translateY(-100%);
+}
+
+.rotate90 {
+    -webkit-transform: rotate(90deg);
+    -moz-transform: rotate(90deg);
+    -o-transform: rotate(90deg);
+    -ms-transform: rotate(90deg);
+    transform: rotate(90deg);
 }
 </style>

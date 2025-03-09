@@ -4,7 +4,7 @@ const user = JSON.parse(localStorage.getItem("cur_user"));
 
 <template>
   <div class="page-content">
-    <h1>Logs</h1>
+    <NewLog v-if="newLogLogoVisible" />
     <div class="search-con">
       <!--
       <multiselect class="search-input" id="companyTag" v-model="searchCompany" tag-placeholder="Add this as new tag"
@@ -23,13 +23,19 @@ const user = JSON.parse(localStorage.getItem("cur_user"));
       <div class="calendar-picker">
         <div class="date-input-c">
           <input class="date-input" @click="showCalendar = !showCalendar"
-            :placeholder="fromDate && toDate ? fromDate + ' - ' + toDate : 'Select Date'">
+            :placeholder="this.selectedDate.start && this.selectedDate.end ? 
+            this.selectedDate.start.toLocaleDateString() + ' - ' + this.selectedDate.end.toLocaleDateString() : 'Select Date'">
           </input>
-          <button v-if = "showCalendar || fromDate || toDate" class = "remove-date-btn" @click="removeDate()"> x </button>
+          <button v-if="showCalendar || fromDate || toDate" class="remove-date-btn" @click="removeDate()"> x </button>
         </div>
-        <v-calendar v-if="showCalendar" :attributes="attributes" @dayclick="onDayClick" />
+        <!--
+        <v-calendar class="v-calen" mode="dateTime" v-if="showCalendar" :attributes="attributes"
+          @dayclick="onDayClick" />
         <p v-if="fromDate && toDate">
-        </p>
+                  </p>
+        -->
+          <v-date-picker class = "v-calen"  v-if="showCalendar" 
+          mode="dateTime" v-model = "selectedDate" is-range is24hr/>
       </div>
     </div>
     <div class=log-table>
@@ -37,25 +43,25 @@ const user = JSON.parse(localStorage.getItem("cur_user"));
         <thead>
           <tr>
             <th>Date</th>
-            <th>Id</th>
-            <th>Name</th>
             <th>Time</th>
+            <th>Check No.</th>
+            <th>Name</th>
             <th>Alcohol Strength</th>
             <th>Department</th>
             <th>Equipment Model</th>
-            <th>Check No.</th>
+            <th>Id</th>
           </tr>
         </thead>
         <tbody id="table_log">
-          <tr v-for="item in filteredData" :key="item.checkserialnumber">
+          <tr v-for="item in filteredData" :key="item.checkserialnumber" :class = "getRowColorClass(item)">
             <td class="table-ele">{{ item.date }}</td>
-            <td class="table-ele">{{ item.gid }}</td>
-            <td class="table-ele">{{ item.name }}</td>
             <td class="table-ele">{{ item.time }}</td>
-            <td class="table-ele">{{ item.alcoholstrength }} miligram</td>
+            <td class="table-ele">{{ item.checkserialnumber }}</td>
+            <td class="table-ele">{{ item.name }}</td>
+            <td class="table-ele">{{ item.alcoholstrength }} mg/100ml</td>
             <td class="table-ele">{{ item.deptname }}</td>
             <td class="table-ele">{{ item.equipmentmodel }}</td>
-            <td class="table-ele">{{ item.checkserialnumber }}</td>
+            <td class="table-ele">{{ item.gid }}</td>
           </tr>
         </tbody>
       </table>
@@ -70,17 +76,30 @@ import Multiselect from 'vue-multiselect'
 import html2pdf from 'html2pdf.js';
 import api from '@/assets/api';
 import $ from 'jquery';
+import NewLog from '@/components/NewLog.vue';
 const apiReq = new api();
 export default {
   components: { Multiselect },
   data() {
     return {
       showCalendar: ref(false),
-      fromDate: ref(null),
-      toDate: ref(null),
-      selectedDates: ref([]),
-      attributes: ref([]),
-
+      selectedDate: ref({
+        start: null,
+        end: null
+      }),
+      lastLog: ref(null),
+      intervalId: null,
+      newLogLogoVisible: ref(false),
+      newLogTimeoutId: ref(null),
+      attributes: ref([
+        {
+          highlight: {
+            start: { fillMode: 'outline' },
+            base: { fillMode: 'light' },
+            end: { fillMode: 'outline' },
+          },
+        },
+      ]),
       searchCompany: ref(new Set()),
       companyIndex: ref([
         {
@@ -105,36 +124,15 @@ export default {
     }
   },
   methods: {
-    onDayClick(day) {
-      const date = day.date;
-
-      if (!this.fromDate) {
-        this.fromDate = date.toLocaleDateString();
-        this.selectedDates = [date];
-      } else if (!this.toDate) {
-        if (date > new Date(this.fromDate)) {
-          this.toDate = date.toLocaleDateString();
-          this.selectedDates.push(date);
-          this.showCalendar = false;
-        } else {
-          this.fromDate = date.toLocaleDateString();
-          this.selectedDates = [date];
-        }
-      } else {
-        this.fromDate = date.toLocaleDateString();
-        this.toDate = null;
-        this.selectedDates = [date];
-      }
-    },
-    removeDate(){
+    removeDate() {
       this.showCalendar = false;
-      this.fromDate = null;
-      this.toDate = null;
-      this.selectedDates = [];
+      this.selectedDate.start = null;
+      this.selectedDate.end = null;
     },
     getLogData() {
       apiReq.get("log/getAllLogs").then(data => {
         this.tableData = data;
+        this.lastLog = data[data.length - 1].loguuid
         for (let i = 0; i < this.tableData.length; i++) {
           let splitDateTime = this.tableData[i].checkdate.split(" ");
           this.tableData[i].date = splitDateTime[0];
@@ -145,6 +143,30 @@ export default {
         console.log(err);
         alert("no data found");
       })
+    },
+    getLastLog() {
+      this.intervalId = setInterval(() => {
+        apiReq.get("log/getRecentLog").then(data => {
+          if (this.lastLog && this.lastLog !== data[0].loguuid) {
+            this.lastLog = data[0].loguuid;
+            this.getLogData();
+            this.newLogLogoVisible = true;
+            clearTimeout(this.newLogTimeoutId);
+            this.newLogTimeoutId = setTimeout(() => {
+              this.newLogLogoVisible = false;
+            }, 2700);
+          }
+          console.log(this.lastLog);
+        }).catch(err => {
+          console.log(err);
+        })
+      }, 1500)
+    },
+    stopInterval() {
+      if (this.intervalId) {
+        clearInterval(this.intervalId);
+        this.intervalId = null;
+      }
     },
     getDepartmentData() {
       apiReq.get("dep/getAll").then(data => {
@@ -160,6 +182,18 @@ export default {
         console.log(err);
       })
     },
+    getRowColorClass(item) {
+          const alcoholStr = parseInt(item.alcoholstrength, 10)
+          console.log(alcoholStr);
+            if (item.lowalclvl && item.medalclvl && item.highalclvl) {
+                return {
+                    'low-alc': alcoholStr >= item.lowalclvl && alcoholStr < item.medalclvl,
+                    'medium-alc': alcoholStr >= item.medalclvl && alcoholStr < item.highalclvl,
+                    'high-alc': alcoholStr >= item.highalclvl,
+                };
+            }
+            return {};
+        },
     generatePDF() {
       const element = document.querySelector('table'); // Get the table element
 
@@ -199,9 +233,10 @@ export default {
         });
       }
 
-      if (this.fromDate && this.toDate) {
-        const from = new Date(this.fromDate);
-        const to = new Date(this.toDate);
+      if (this.selectedDate.start && this.selectedDate.end) {
+        this.showCalendar = false;
+        const from = new Date(this.selectedDate.start);
+        const to = new Date(this.selectedDate.end);
 
         filteredLogs = filteredLogs.filter((log) => {
           const logDate = new Date(log.date);
@@ -228,32 +263,16 @@ export default {
       },
       deep: true,
     },
-    searchEquip: {
-      handler(newValue, oldValue) {
-        console.log("searchDep changed:", newValue, oldValue);
-        this.searchEquipSet.clear();
-        newValue.forEach(item => this.searchEquipSet.add(item.equipmentmodel));
-
-        console.log('searchEquipSet (set):', this.searchEquipSet);
-      },
-      deep: true,
-    },
-    searchGid: {
-      handler(newValue, oldValue) {
-        console.log("searchDep changed:", newValue, oldValue);
-        this.searchGidSet.clear();
-        newValue.forEach(item => this.searchGidSet.add(item.gid));
-
-        console.log('searchGidSet (set):', this.searchGidSet);
-      },
-      deep: true,
-    },
   },
   */
   mounted() {
     this.getLogData();
     this.getCompanyData();
     this.getDepartmentData();
+    this.getLastLog();
+  },
+  beforeUnmount() {
+    this.stopInterval(); // Clear the interval when the component is unmounted
   },
 
 }
@@ -280,21 +299,45 @@ export default {
 }
 
 .calendar-picker {
-  position: fixed;
-  top: 7.05vw;
-  left: 58vw;
+  position: relative;
+  left: 3vw;
   align-items: center;
 }
 
-.date-input-c{
+.date-input-c {
   display: flex;
-  justify-content: space-evenly;
   align-items: center;
 }
 
-.remove-date-btn{
+.v-calen {
+  position: absolute;
+  background: white;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  /* Ensures it appears above other elements */
+  width: max-content;
+}
+
+.vc-time-select-group select {
+    background: transparent;
+    padding: 3px 45px;
+    text-align: center;
+    border: none;
+}
+
+.vc-base-select select.vc-align-right {
+    text-align: center;
+}
+
+.vc-pane {
+    min-width: 250px;
+}
+
+.remove-date-btn {
   border: none;
   border-radius: 50%;
+  position: absolute;
+  right: 0vw;
   width: 1.4vw;
   height: 1.4vw;
   margin: 0.3vw;
@@ -304,13 +347,30 @@ export default {
   cursor: pointer;
   box-shadow: rgba(50, 50, 93, 0.25) 0px 30px 60px -12px inset, rgba(0, 0, 0, 0.3) 0px 18px 36px -18px inset;
 }
+
 .date-input {
   min-height: 40px;
   display: block;
   padding: 0.68vw;
+  width: 13.5vw;
   border-radius: 5px;
   border: 1px solid #e8e8e8;
   background: #fff;
+  color: black;
   font-size: 0.8vw;
 }
+
+.low-alc {
+    background-color: rgb(239, 227, 57);
+}
+
+.medium-alc {
+    background-color: rgb(233, 169, 143);
+}
+
+.high-alc {
+    background-color: rgb(235, 103, 103);
+}
+
+
 </style>
